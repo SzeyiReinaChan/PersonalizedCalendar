@@ -1,4 +1,6 @@
 # cs5100_spring24_project
+Team member: Kaiqi Zhang, Szeyi Chan
+
 Project question:<br>
 Decision-making with the goal of max 𝑟 without knowing 𝑟 a-priori by requiring S to learn about r using human feedback.<br>
 ->Compare 2 types of human feedback: (1) direct reward feedback[1]; (2) corrective feedback[2]<br>
