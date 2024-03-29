@@ -30,10 +30,10 @@ def preference_generator(calendar):
             preference_count += 1
     print("preference_count=", preference_count)
 
-    # randomly generated θ(perfernce) for evaluation, e.g., θ is uniformly random
-    perference = np.random.uniform(0, 1, preference_count*number_of_slots)
+    # randomly generated θ(preference) for evaluation, e.g., θ is uniformly random
+    preference = np.random.uniform(0, 1, preference_count*number_of_slots)
 
-    return perference
+    return preference
 
 
 def featureListGenerator(input, num_range):
@@ -56,7 +56,7 @@ def simulation(calendar, rounds=2):
 
     # simulate preference
     preference = preference_generator(calendar)
-    print("============Perference============")
+    print("============Preference============")
     print("preference=", preference)
 
     assert (len(preference) == len(initialize_feature))
@@ -141,7 +141,7 @@ def simulation(calendar, rounds=2):
         # 5. Human feedback I
         # Getting human feedback from likert scale or thumbs up/down
         # For now, let's assume the human feedback is the same as the reward with some noise
-        # TODO: Add algorithm to learn from human feedback here (estimate preferenece)
+        # TODO: Add algorithm to learn from human feedback here (estimate preference)
         # Paper: A Contextual-Bandit Approach to Personalized News Article Recommendation
         noise = np.random.normal(loc=0.0, scale=0.1)
         human_rating = total_reward + noise
@@ -149,7 +149,7 @@ def simulation(calendar, rounds=2):
 
         # 6. Human feedback II
         # Getting human feedback from human correction
-        # TODO: Add algorithm to learn from human feedback here (estimate preferenece)
+        # TODO: Add algorithm to learn from human feedback here (estimate preference)
         # Paper: Coactive Learning
         calendar_highest_reward = None
         reward_highest = -np.Inf
@@ -172,7 +172,7 @@ def simulation(calendar, rounds=2):
         human_correction = calendar_highest_reward
         print("human_correction=", human_correction)
 
-    # Evaluation of the algorthm by the total reward
+    # Evaluation of the algorithm by the total reward
     # The higher total reward, the better
     print("total_reward=", total_reward)
 
