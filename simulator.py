@@ -5,11 +5,11 @@ np.random.seed(0)
 random.seed(0)
 
 # some features for future use
-D_day = {"Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
-         "Thursday": 4, "Friday": 5, "Saturday": 6}
-D_start = ["12:00am", "11:59pm"]
-D_duration = [i for i in range(24*60+1)]
-D_periods = {"morning": 0, "afternoon": 1, "evening": 2}
+# D_day = {"Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
+#          "Thursday": 4, "Friday": 5, "Saturday": 6}
+# D_start = ["12:00am", "11:59pm"]
+# D_duration = [i for i in range(24*60+1)]
+# D_periods = {"morning": 0, "afternoon": 1, "evening": 2}
 
 irrelevant_events = ["gym", "class"]
 relevant_events = ["assignment_out", "reading"]
@@ -48,27 +48,29 @@ def featureListGenerator(input, num_range):
     return features_list
 
 
-def simulation(calendar, rounds=2):
-    initialize_feature = featureListGenerator(
-        calendar, [1, number_of_slots + 1])
-    print("============**Init**============")
-    print("initialize_feature= ", initialize_feature)
+def simulation(rounds=2):
+    # initialize_feature = featureListGenerator(
+    #     calendar, [1, number_of_slots + 1])
+    # print("============**Init**============")
+    # print("initialize_feature= ", initialize_feature)
 
     # simulate preference
-    preference = preference_generator(calendar)
+    # preference = preference_generator(calendar)
+    preference = np.random.uniform(
+        0, 1, len(relevant_events)*number_of_slots)
     print("============Preference============")
     print("preference=", preference)
 
-    assert (len(preference) == len(initialize_feature))
+    # assert (len(preference) == len(initialize_feature))
 
     # initialize reward
     total_reward = 0.0
     # # 10 rounds of simulation
     for t in range(rounds):
-        print("============ Round ", t, "============")
+        print("\n============ Round ", t, "============")
 
         # 1. Get st=irrelevant calendar
-        st_irrelevant_calendar = [-1]*number_of_slots
+        st_irrelevant_calendar = [-1]*number_of_slots  # empty calendar
         for each in irrelevant_events:
             # allow 1 in max for each irrelevant event
             num_each = np.random.randint(0, 2, size=1)[0]
@@ -144,8 +146,9 @@ def simulation(calendar, rounds=2):
         # TODO: Add algorithm to learn from human feedback here (estimate preference)
         # Paper: A Contextual-Bandit Approach to Personalized News Article Recommendation
         noise = np.random.normal(loc=0.0, scale=0.1)
-        human_rating = total_reward + noise
-        print("human_rating=", human_rating)
+        human_rating = reward + noise
+        # TODO: change to integer (likert scale)
+        print("(Noisy) human_rating=", human_rating)
 
         # 6. Human feedback II
         # Getting human feedback from human correction
@@ -157,7 +160,7 @@ def simulation(calendar, rounds=2):
             # update the feature list because the calendar has been updated
             updated_feature_list = featureListGenerator(
                 eligible_calendar, [number_of_slots])
-            eligible_calendar_reward = np.dot(preference, features_list)
+            eligible_calendar_reward = np.dot(preference, updated_feature_list)
             print("eligible_calendar=", eligible_calendar, ", features_list=",
                   updated_feature_list, ", reward=", eligible_calendar_reward)
 
@@ -166,26 +169,27 @@ def simulation(calendar, rounds=2):
                 reward_highest = eligible_calendar_reward
                 calendar_highest_reward = eligible_calendar
 
-        print("calendar_highest_reward=", calendar_highest_reward)
+        # print("calendar_highest_reward=", calendar_highest_reward)
 
         # assume the human correction is the optimal calendar
         human_correction = calendar_highest_reward
-        print("human_correction=", human_correction)
+        print("(Noieless for now) human_correction=", human_correction)
 
     # Evaluation of the algorithm by the total reward
     # The higher total reward, the better
-    print("total_reward=", total_reward)
+    print("\n\ntotal_reward=", total_reward)
 
 
-def testCase1():
-    calendar1 = {1: "gym", 2: "assignment_out",
-                 3: "reading", 4: -1, 5: "class"}
-    simulation(calendar1)
-
+# def testCase1():
+#     calendar1 = {1: "gym", 2: "assignment_out",
+#                  3: "reading", 4: -1, 5: "class"}
+#     simulation(calendar1)
 
 def main():
-    # Test case 1
-    testCase1()
+    # TODO: offline procedure to extract information
+    # testCase1()
+
+    simulation()
 
 
 if __name__ == "__main__":
