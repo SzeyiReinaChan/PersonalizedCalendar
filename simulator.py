@@ -129,28 +129,30 @@ def simulation(rounds=2):
         # generate the feature factors for each possible calendar
         feature_factors = []
         for each_possible_calendar in possible_calendars:
-            feature_factors.append(featureListGenerator(each_possible_calendar, [number_of_slots]))
+            feature_factors.append(featureListGenerator(
+                each_possible_calendar, [number_of_slots]))
 
-        ucb_chosen_action_at = linear_ucb.actionSelection(possible_calendars, feature_factors)
+        ucb_chosen_action_at = linear_ucb.actionSelection(
+            possible_calendars, feature_factors)
         print("action=", ucb_chosen_action_at)
 
         # get the reward - reward of the true human preference
-        chosen_action_feature_list = featureListGenerator(ucb_chosen_action_at, [number_of_slots])
+        chosen_action_feature_list = featureListGenerator(
+            ucb_chosen_action_at, [number_of_slots])
         ucb_human_reward = np.dot(preference, chosen_action_feature_list)
         print("human reward=", ucb_human_reward)
 
         # update the reward based on the human rating + random simulated noise
-        ucb_noisy_reward = ucb_human_reward + np.random.normal(loc=0.0, scale=0.1)
+        ucb_noisy_reward = ucb_human_reward + \
+            np.random.normal(loc=0.0, scale=0.1)
         print("noisy reward=", ucb_noisy_reward)
 
         # update the algorithm based on the reward
         linear_ucb.updateByRating(ucb_noisy_reward, feature_factors)
-        
+
         # for evaluation purpose
         ucb_total_reward += ucb_noisy_reward
         print("\ntotal_reward=", ucb_total_reward)
-
-
 
         # 1. Get st=irrelevant calendar
         # st_irrelevant_calendar = [-1]*number_of_slots  # empty calendar
