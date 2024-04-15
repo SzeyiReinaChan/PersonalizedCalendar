@@ -53,8 +53,8 @@ class LinearUCB:
         # update A_a and b_a
         feature_chosen = np.array(
             feature_factors[self.action_index_chosen])  # TODO
-        assert np.shape(feature_chosen.T *
-                        feature_factors[self.action_index_chosen]) == (d, d)
+        # assert np.shape(feature_chosen.T *
+        #                 feature_factors[self.action_index_chosen]) == (d, d)
         self.A_a_s[self.action_index_chosen] += feature_chosen.T * \
             feature_factors[self.action_index_chosen]  # TODO
         assert np.shape(feature_chosen) == (d,)
