@@ -34,7 +34,7 @@ class LinearUCB:
         d = len(self.relevant_events) * self.number_of_slots
         p_t_a = []  # UCB
         theta_hat = []
-        alpha = 0.1
+        alpha = 10
 
         for action_index in range(len(A_list)):
             if A_list[action_index] not in self.explored_actions.values():
@@ -64,7 +64,6 @@ class LinearUCB:
             p_t_a.append(np.dot(theta_hat[action_index].T, feature_factors[action_index]
                                 ) + alpha*np.sqrt(np.dot(current_feature_factors.T, np.dot(np.linalg.inv(self.A_a_s[action_index]), feature_factors[action_index]))))
 
-        print(self.explored_actions)
         # choose the action with the highest UCB
         self.action_index_chosen = np.argmax(p_t_a)
         self.action = A_list[self.action_index_chosen]
@@ -98,6 +97,8 @@ class LinearUCB:
                         np.array(feature_chosen_reshaped).T) == (d, d)
         self.A_a_s[extracted_action_key] += np.dot(
             feature_chosen, np.array(feature_chosen_reshaped).T)
+        # print(self.explored_actions)
+        # print("A_a_s=", self.A_a_s)
         assert np.shape(feature_chosen) == (d,)
         self.b_a_s[extracted_action_key] += reward_human_rating * \
             np.array(feature_chosen)
