@@ -34,7 +34,8 @@ class LinearUCB:
         d = len(self.relevant_events) * self.number_of_slots
         p_t_a = []  # UCB
         theta_hat = []
-        alpha = 10
+        delta = 0.1
+        alpha = 1+np.sqrt(np.log(2/delta)/2)
 
         for action_index in range(len(A_list)):
             if A_list[action_index] not in self.explored_actions.values():
@@ -51,6 +52,8 @@ class LinearUCB:
                 if value == A_list[action_index]:
                     extracted_action_key = key
                     break
+            # print("A_a_s=", self.A_a_s[extracted_action_key],
+            #       "b_a_s=", self.b_a_s[extracted_action_key])
             theta_hat.append(np.dot(np.linalg.inv(
                 self.A_a_s[extracted_action_key]), self.b_a_s[extracted_action_key]))
 
@@ -61,6 +64,9 @@ class LinearUCB:
                 self.A_a_s[action_index]), feature_factors[action_index])) == (d,)
             assert np.shape(np.dot(current_feature_factors.T, np.dot(np.linalg.inv(
                 self.A_a_s[action_index]), feature_factors[action_index]))) == ()
+            # print("current_feature_factors=", current_feature_factors)
+            # print("theta_hat= ", theta_hat[action_index], "ucb_term 1=", np.dot(theta_hat[action_index].T, feature_factors[action_index]), "ucb term2= ", alpha*np.sqrt(np.dot(
+            # current_feature_factors.T, np.dot(np.linalg.inv(self.A_a_s[action_index]), feature_factors[action_index]))), "A_list = ", A_list[action_index])
             p_t_a.append(np.dot(theta_hat[action_index].T, feature_factors[action_index]
                                 ) + alpha*np.sqrt(np.dot(current_feature_factors.T, np.dot(np.linalg.inv(self.A_a_s[action_index]), feature_factors[action_index]))))
 
@@ -95,10 +101,15 @@ class LinearUCB:
         feature_chosen_reshaped = np.array(feature_chosen).reshape(1, d)
         assert np.shape(feature_chosen *
                         np.array(feature_chosen_reshaped).T) == (d, d)
-        self.A_a_s[extracted_action_key] += np.dot(
-            feature_chosen, np.array(feature_chosen_reshaped).T)
+        # print(self.action)
+        # print("old A_a_s=", self.A_a_s[extracted_action_key])
+        self.A_a_s[extracted_action_key] += feature_chosen * \
+            np.array(feature_chosen_reshaped).T
         # print(self.explored_actions)
-        # print("A_a_s=", self.A_a_s)
+        # print(feature_chosen_reshaped)
+        # print(np.dot(
+        # feature_chosen, np.array(feature_chosen_reshaped).T))
+        # print("new A_a_s=", self.A_a_s[extracted_action_key])
         assert np.shape(feature_chosen) == (d,)
         self.b_a_s[extracted_action_key] += reward_human_rating * \
             np.array(feature_chosen)
