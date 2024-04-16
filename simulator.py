@@ -110,11 +110,8 @@ def simulation(rounds=2):
     print("============Preference============")
     print("preference=", preference)
 
-    # assert (len(preference) == len(initialize_feature))
-
     # initialize the algorithm
     linear_ucb = LinearUCB(relevant_events, number_of_slots)
-
     # initialize reward
     ucb_total_reward = 0.0
 
@@ -134,25 +131,25 @@ def simulation(rounds=2):
 
         ucb_chosen_action_at = linear_ucb.actionSelection(
             possible_calendars, feature_factors)
-        print("action=", ucb_chosen_action_at)
+        print("ucb action chosen=", ucb_chosen_action_at)
 
         # get the reward - reward of the true human preference
         chosen_action_feature_list = featureListGenerator(
             ucb_chosen_action_at, [number_of_slots])
         ucb_human_reward = np.dot(preference, chosen_action_feature_list)
-        print("human reward=", ucb_human_reward)
+        print("ucb human reward=", ucb_human_reward)
 
         # update the reward based on the human rating + random simulated noise
         ucb_noisy_reward = ucb_human_reward + \
             np.random.normal(loc=0.0, scale=0.1)
-        print("noisy reward=", ucb_noisy_reward)
+        print("ucb noisy reward=", ucb_noisy_reward)
 
         # update the algorithm based on the reward
-        linear_ucb.updateByRating(ucb_noisy_reward, feature_factors)
+        linear_ucb.updateByRating(ucb_noisy_reward, possible_calendars, feature_factors)
 
         # for evaluation purpose
         ucb_total_reward += ucb_noisy_reward
-        print("\ntotal_reward=", ucb_total_reward)
+        print("\nucb total_reward=", ucb_total_reward)
 
         # 1. Get st=irrelevant calendar
         # st_irrelevant_calendar = [-1]*number_of_slots  # empty calendar
