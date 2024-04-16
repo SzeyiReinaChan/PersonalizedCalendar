@@ -118,6 +118,11 @@ def simulation(rounds=2):
     # initialize reward
     ucb_total_reward = 0.0
 
+
+    #initialize the preference perceptron algorithm with the number of features
+    number_of_features = len(relevant_events)*number_of_slots
+    preference_perceptron = PreferencePerceptron(number_of_features)
+
     # Rounds of simulations
     for t in range(rounds):
         print("\n============ Round", t, "============")
