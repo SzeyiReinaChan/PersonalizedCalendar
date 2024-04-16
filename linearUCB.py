@@ -69,13 +69,17 @@ class LinearUCB:
         self.action_index_chosen = np.argmax(p_t_a)
         self.action = A_list[self.action_index_chosen]
 
-        return self.action
+        # we want to return the calendar with irrelevant events back to human
+        human_original_calender = possible_calendar[self.action_index_chosen]
+
+        return human_original_calender
 
     def updateByRating(self, reward_human_rating, possible_calendars, feature_factors):
         feature_chosen = None
         extracted_action_key = None
         d = len(self.relevant_events) * self.number_of_slots
-        cleaned_possible_calendars = self.cleanPossibleCalendar(possible_calendars)
+        cleaned_possible_calendars = self.cleanPossibleCalendar(
+            possible_calendars)
 
         # find the feature of the chosen action
         for action_index in range(len(cleaned_possible_calendars)):
@@ -83,15 +87,17 @@ class LinearUCB:
                 feature_chosen = feature_factors[action_index]
                 break
 
-        #find the index place of the chosen action in A_a_s and b_a_s
+        # find the index place of the chosen action in A_a_s and b_a_s
         for key, value in self.explored_actions.items():
             if value == self.action:
                 extracted_action_key = key
                 break
 
-        feature_chosen_reshaped = np.array(feature_chosen).reshape(1,d)
-        assert np.shape(feature_chosen * np.array(feature_chosen_reshaped).T) == (d, d)
-        self.A_a_s[extracted_action_key] += np.dot(feature_chosen, np.array(feature_chosen_reshaped).T)
+        feature_chosen_reshaped = np.array(feature_chosen).reshape(1, d)
+        assert np.shape(feature_chosen *
+                        np.array(feature_chosen_reshaped).T) == (d, d)
+        self.A_a_s[extracted_action_key] += np.dot(
+            feature_chosen, np.array(feature_chosen_reshaped).T)
         assert np.shape(feature_chosen) == (d,)
-        self.b_a_s[extracted_action_key] += reward_human_rating * np.array(feature_chosen)
-
+        self.b_a_s[extracted_action_key] += reward_human_rating * \
+            np.array(feature_chosen)
