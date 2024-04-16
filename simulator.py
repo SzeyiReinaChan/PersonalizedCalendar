@@ -117,11 +117,13 @@ def simulation(rounds=2):
 
     # initialize reward
     ucb_total_reward = 0.0
+    pp_total_reward = 0.0
+    pp_total_feedback_reward = 0.0
 
+    #initialize weights for perceptron
+    num_features = number_of_slots * len(relevant_events)
+    w = np.zeros(num_features)
 
-    #initialize the preference perceptron algorithm with the number of features
-    number_of_features = len(relevant_events)*number_of_slots
-    preference_perceptron = PreferencePerceptron(number_of_features)
 
     # Rounds of simulations
     for t in range(rounds):
@@ -158,6 +160,60 @@ def simulation(rounds=2):
         # for evaluation purpose
         ucb_total_reward += ucb_noisy_reward
         print("\ntotal_reward=", ucb_total_reward)
+
+        # Preference Perceptron simulation===================================
+        best_action = None
+        max_val = float('-inf')
+        for calendar in possible_calendars:
+            feature_vector = featureListGenerator(calendar, [number_of_slots])
+            val = np.dot(w, feature_vector)
+            if val > max_val:
+                max_val = val
+                best_action = calendar
+        #Get the reward for the best action based on Perceptron
+        pp_reward = np.dot(preference, featureListGenerator(best_action, [number_of_slots]))
+        print("Reard for best action based on Perceptron: ", pp_reward)
+        pp_total_reward += pp_reward
+        print("\npp total_reward=", pp_total_reward)
+
+        #Obtain feedback by selecting from calendars with rewards greater than or equal to the reward
+        feedback_calendars = []
+        for calendar in possible_calendars:
+            calandar_reward = np.dot(preference, featureListGenerator(calendar, [number_of_slots]))
+            if calandar_reward >= pp_reward:
+                feedback_calendars.append(calendar)
+        if not feedback_calendars:
+            feedback_calendars.append(best_action)
+        
+        #Randomly select feedback from calandars with rewards greater than or equal to the reward
+        feedback_index = np.random.choice(len(feedback_calendars))
+        feedback = feedback_calendars[feedback_index]
+        feedback_reward = np.dot(preference, featureListGenerator(feedback, [number_of_slots]))
+        pp_total_feedback_reward += feedback_reward
+        print("\npp total_feedback_reward=", pp_total_feedback_reward)
+
+        #Update the weights based on the feedback
+        phi_best_action = np.array(featureListGenerator(best_action, [number_of_slots]))
+        phi_feedback = np.array(featureListGenerator(feedback, [number_of_slots]))
+
+        w += phi_feedback - phi_best_action
+
+    print("Final weights after simulation:", w)
+
+        # action_index = preference_perceptron.predict(feature_factors)
+        # chosen_action = possible_calendars[action_index]
+        # chosen_action_features = feature_factors[action_index]
+
+        # #Get the true best action according to the preference
+        # #TODO: Implement the function get_true_best_action
+        # true_action_index = get_true_best_action()
+        # true_action = possible_calendars[true_action_index]
+        
+        # reward = np.dot(preference_perceptron.weights, chosen_action_features)
+        # preference_perceptron.update(feature_factors, action_index, true_action_index)
+        # pp_total_reward += reward
+
+        # print("\npp total_reward=", pp_total_reward)
 
         # 1. Get st=irrelevant calendar
         # st_irrelevant_calendar = [-1]*number_of_slots  # empty calendar
