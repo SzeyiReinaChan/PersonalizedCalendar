@@ -25,7 +25,12 @@ reading_constrain = [0, 1, 2, 3, 4]
 
 # Total number of slots (5 for now for simplicity)
 # Will be changed to 24*60/30 = 48 for 30 minutes slots for day implementation
-number_of_slots = 5
+# number_of_slots = 5
+
+#total number of slots in a week 21
+num_days = 7
+num_slots_per_day = 3
+total_slots = num_days * num_slots_per_day
 
 # For generating the preference for each event in each slot.
 
@@ -38,7 +43,7 @@ def preferenceGenerator(calendar):
     # print("preference_count=", preference_count)
 
     # randomly generated θ(preference) for evaluation, e.g., θ is uniformly random
-    preference = np.random.uniform(0, 1, preference_count*number_of_slots)
+    preference = np.random.uniform(0, 1, preference_count*total_slots)
 
     return preference
 
@@ -56,13 +61,13 @@ def featureListGenerator(input, num_range):
 
 
 def get_irrelevant_calendar():
-    st_irrelevant_calendar = [-1]*number_of_slots  # empty calendar
+    st_irrelevant_calendar = [-1] * total_slots  # empty calendar
     for each in irrelevant_events:
         # allow 1 in max for each irrelevant event
         num_each = np.random.randint(0, 2, size=1)[0]
         for _ in range(num_each):
             # randomly assign the position for the irrelevant events
-            probability = np.random.uniform(0, 1, number_of_slots)
+            probability = np.random.uniform(0, 1, total_slots)
             probability_normalized = probability / probability.sum()
             each_position = np.random.choice(
                 [0, 1, 2, 3, 4], p=probability_normalized)
@@ -80,7 +85,7 @@ def get_irrelevant_calendar():
 
 def eligibleActionsGenerator(st_irrelevant_calendar):
     slots_available = [i for i in range(
-        number_of_slots) if st_irrelevant_calendar[i] == -1]
+        total_slots) if st_irrelevant_calendar[i] == -1]
     # print("slots_available=", slots_available)
 
     possible_calendars = []
