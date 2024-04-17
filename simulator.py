@@ -137,6 +137,7 @@ def calculation_and_plotting(rep, rounds, reward_dataset, regret_dataset,
                              "rounds", "value", algo_name, algo_name+"_with_error_bar.png")
     plot_data_with_error_bar(rounds, algo_name, regret_over_t_avg, regret_over_t_std_err,
                              "rounds", "value", algo_name, algo_name+"decay_with_error_bar.png")
+    return reward_avg, regret_avg, reward_std_err, regret_std_err, reward_over_t_avg, regret_over_t_avg, reward_over_t_std_err, regret_over_t_std_err
 
 
 def plot_data(dataset, dataset_name, xlabel, ylabel, title, plot_filename):
@@ -148,6 +149,15 @@ def plot_data(dataset, dataset_name, xlabel, ylabel, title, plot_filename):
     plt.savefig(plot_filename)
     plt.close()
 
+def plot_2_data_sets(dataset_1, dataset_2, dataset_1_legend, dataset_2_legend, title, plot_filename):
+    plt.plot(dataset_1)
+    plt.plot(dataset_2) 
+    plt.xlabel('rounds')
+    plt.ylabel('value')
+    plt.title(title)
+    plt.legend([dataset_1_legend, dataset_2_legend], loc='upper left')
+    plt.savefig(plot_filename)
+    plt.close()
 
 def plot_data_with_error_bar(rounds, algo_name, dataset, std_err_dataset, xlabel, ylabel, title, plot_filename):
     time = np.arange(rounds)
@@ -343,11 +353,16 @@ def main():
             pp_reward_over_t_dataset = np.vstack((pp_reward_over_t_dataset, pp_reward_over_t_data))
             pp_regret_over_t_dataset = np.vstack((pp_regret_over_t_dataset, pp_regret_over_t_data))
 
-
-    calculation_and_plotting(rep, rounds, ucb_reward_dataset, ucb_regret_dataset,
-                             ucb_reward_over_t_dataset, ucb_regret_over_t_dataset, 'ucb')
-    calculation_and_plotting(rep, rounds, pp_reward_dataset, pp_regret_dataset,
-                             pp_reward_over_t_dataset, pp_regret_over_t_dataset, 'pp')
+    reward_avg_ucb, regret_avg_ucb, reward_std_err_ucb, regret_std_err_ucb, reward_over_t_avg_ucb, regret_over_t_avg_ucb,\
+    reward_over_t_std_err_ucb, regret_over_t_std_err_ucb = calculation_and_plotting(rep, rounds, ucb_reward_dataset, 
+                                                                                    ucb_regret_dataset, ucb_reward_over_t_dataset, 
+                                                                                    ucb_regret_over_t_dataset, 'ucb')
+    reward_avg_pp, regret_avg_pp, reward_std_err_pp, regret_std_err_pp, reward_over_t_avg_pp, regret_over_t_avg_pp,\
+    reward_over_t_std_err_pp, regret_over_t_std_err_pp = calculation_and_plotting(rep, rounds, pp_reward_dataset, 
+                                                                                pp_regret_dataset, pp_reward_over_t_dataset, 
+                                                                                pp_regret_over_t_dataset, 'pp')
+    plot_2_data_sets(regret_avg_ucb, regret_avg_pp, 'UCB', 'PP', 'Regret Comparison', 'regret_comparison.png')
+    plot_2_data_sets(regret_over_t_avg_ucb, regret_over_t_avg_pp, 'UCB', 'PP', 'Regret Decay Comparison', 'regret_over_t_comparison.png')
 
 
 if __name__ == "__main__":
