@@ -27,12 +27,7 @@ reading_constrain = [0, 1, 2, 3, 4]
 # Will be changed to 24*60/30 = 48 for 30 minutes slots for day implementation
 number_of_slots = 5
 
-ucb_reward_dataset = []
-ucb_regret_dataset = []
-
 # For generating the preference for each event in each slot.
-
-
 def preferenceGenerator(calendar):
     preference_count = 0
     for each in calendar.values():
@@ -88,16 +83,6 @@ def eligibleActionsGenerator(st_irrelevant_calendar):
 
     possible_calendars = []
 
-    # slot_for_assignment = copy.copy(slots_available)
-    # for slot_index in range(len(slot_for_assignment)):
-    #     slot_for_assignment.remove(slot_index)
-    #     for each in relevant_events:
-    #         constrain_name = each + "_constrain"
-    #         if slot_index in globals()[constrain_name]:
-    #             new_calendar = copy.copy(st_irrelevant_calendar)
-    #             new_calendar[slot_index] = each
-    #             possible_calendars.append(new_calendar)
-
     for assignment_out_slot in slots_available:
         for reading_slot in slots_available:
             if reading_slot == assignment_out_slot:
@@ -111,56 +96,34 @@ def eligibleActionsGenerator(st_irrelevant_calendar):
             new_calendar[reading_slot] = "reading"
             possible_calendars.append(new_calendar)
 
-    # for relevant_event_index in range(len(relevant_events)): # index: 0, 1
-    #     for slot_index in range(len(slots_available)):  # index: 0, 1
-    #         name = relevant_events[relevant_event_index]  # reading
-    #         constrain_name = name + "_constrain"  # reading_constrain
-    #         #print(constrain_name, "=", globals()[constrain_name])
-    #         #print(slot_index)
-    #         if slots_available[slot_index] != -1:
-    #             continue
-
-    # slot_for_assignment = copy.copy(slots_available)
-    # for slot_index in range(len(slot_for_assignment)):
-    #     slot_for_assignment.remove(slot_index)
-    #     for each in relevant_events:
-    #         constrain_name = each + "_constrain"
-    #         if slot_index in globals()[constrain_name]:
-
-    #     #print("slot_available=", slot_for_assignment)
-    #     for relevant_event_index in range(len(relevant_events)):
-    #         name = relevant_events[relevant_event_index]
-    #         constrain_name = name + "_constrain"
-    #         if slot_index in globals()[constrain_name]:
-    #             new_calendar = copy.copy(st_irrelevant_calendar)
-    #             new_calendar[slot_index] = name
-    #             possible_calendars.append(new_calendar)
-
     # print("============Possible Actions============")
     # for i in possible_calendars:
         # print(i)
     return slots_available, possible_calendars
 
 
-def plot_data(dataset_1, dataset_2, title, plot_filename):
-    # reward = dataset_1
-    regret = dataset_2
+def plot_data(reward_dataset, regret_dataset, xlabel, ylabel, title, plot_filename):
+    # reward = reward_dataset
+    regret = regret_dataset
     # plt.plot(reward)
     plt.plot(regret)
-    plt.xlabel('rounds')
-    plt.ylabel('reward value')
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
     plt.title(title)
-    plt.legend(['reward', 'regret'], loc='upper left')
+    # plt.legend(['reward', 'regret'], loc='upper left')
     plt.savefig(plot_filename)
     plt.close()
 
 
-def simulation(rounds=int(1e5)):
+def simulation(rounds=int(10000)):
+    ucb_reward_dataset = []
+    ucb_regret_dataset = []
+    ucb_reward_over_t = []
+    ucb_regret_over_t = []
+
     # simulate preference
-    # preference = preferenceGenerator(calendar)
-    # preference = np.random.uniform(
-    #     0, 1, len(relevant_events)*number_of_slots)
-    preference = [0, 1, 0, 0, 0, 0, 0, 0, 1, 0]
+    preference = np.random.uniform(
+        0, 1, len(relevant_events)*number_of_slots)
     # print("============Preference============")
     # print("preference=", preference)
 
@@ -189,13 +152,6 @@ def simulation(rounds=int(1e5)):
         # print("ucb action chosen=", ucb_chosen_action_at)
 
         # get the reward for the best possible calendar
-        # all_possible_reward = []
-        # for each_feature in feature_factors:
-        #     possible_reward = np.dot(preference, np.array(each_feature))
-        #     all_possible_reward.append(possible_reward)
-        # best_possible_reward = max(all_possible_reward)
-        # #print("ucb best possible reward=", best_possible_reward)
-
         best_reward = -np.inf
         best_reward_feature = None
         for each_feature in feature_factors:
@@ -236,14 +192,47 @@ def simulation(rounds=int(1e5)):
         # store the reward for plotting
         ucb_reward_dataset.append(ucb_total_reward)
         ucb_regret_dataset.append(ucb_total_regret)
+        ucb_reward_over_t.append(ucb_total_reward/float(t+1))
+        ucb_regret_over_t.append(ucb_total_regret/float(t+1))
 
-    plot_data(ucb_reward_dataset, ucb_regret_dataset, "UCB", "ucb.png")
-
+    return ucb_reward_dataset, ucb_regret_dataset, ucb_reward_over_t, ucb_regret_over_t
 
 def main():
     # TODO: offline procedure to extract information
 
-    simulation()
+    ucb_reward_dataset = np.array([])
+    ucb_regret_dataset = np.array([])
+    ucb_reward_over_t_dataset = np.array([])
+    ucb_regret_over_t_dataset = np.array([])
+
+    # run 100 times simulation, each time 100 rounds
+    ucb_reward_dataset = None
+    ucb_regret_dataset = None
+
+    rounds = 10
+    for _ in range(rounds):
+        ucb_reward_data, ucb_regret_data, ucb_reward_over_t_data, ucb_regret_over_t_data = simulation()
+
+        if ucb_reward_dataset is None:
+            ucb_reward_dataset = np.array([ucb_reward_data])
+            ucb_regret_dataset = np.array([ucb_regret_data])
+            ucb_reward_over_t_dataset = np.array([ucb_reward_over_t_data])
+            ucb_regret_over_t_dataset = np.array([ucb_regret_over_t_data])
+        else:
+            ucb_reward_dataset = np.vstack((ucb_reward_dataset, ucb_reward_data))
+            ucb_regret_dataset = np.vstack((ucb_regret_dataset, ucb_regret_data))
+            ucb_reward_over_t_dataset = np.vstack([ucb_reward_over_t_data])
+            ucb_regret_over_t_dataset = np.vstack([ucb_regret_over_t_data])
+    
+    ucb_reward_avg = np.mean(ucb_reward_dataset, axis=0)
+    ucb_regret_avg = np.mean(ucb_regret_dataset, axis=0)
+    ucb_reward_over_t_avg = np.mean(ucb_reward_over_t_dataset, axis=0)
+    ucb_regret_over_t_avg = np.mean(ucb_regret_over_t_dataset, axis=0)
+
+    # (reward_dataset, regret_dataset, xlabel, ylabel, title, plot_filename)
+    plot_data(ucb_reward_avg, ucb_regret_avg, "rounds", "value", "UCB", "ucb1.png")
+    # decay plot suppose to show that with more rounds, the regret will decrease
+    plot_data(ucb_reward_over_t_avg, ucb_regret_over_t_avg, "rounds", "value", "UCB", "ucb_decay.png")
 
 
 if __name__ == "__main__":
