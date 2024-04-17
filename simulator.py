@@ -28,6 +28,8 @@ reading_constrain = [0, 1, 2, 3, 4]
 number_of_slots = 5
 
 # For generating the preference for each event in each slot.
+
+
 def preferenceGenerator(calendar):
     preference_count = 0
     for each in calendar.values():
@@ -102,20 +104,66 @@ def eligibleActionsGenerator(st_irrelevant_calendar):
     return slots_available, possible_calendars
 
 
-def plot_data(reward_dataset, regret_dataset, xlabel, ylabel, title, plot_filename):
-    # reward = reward_dataset
-    regret = regret_dataset
-    # plt.plot(reward)
-    plt.plot(regret)
+def calculation_and_plotting(rep, rounds, reward_dataset, regret_dataset,
+                             reward_over_t_dataset, regret_over_t_dataset, algo_name):
+    reward_avg = np.mean(reward_dataset, axis=0)
+    regret_avg = np.mean(regret_dataset, axis=0)
+
+    # calculate the standard error for plotting error bar
+    reward_std_err = np.std(reward_dataset, axis=0) / np.sqrt(rep)
+    regret_std_err = np.std(regret_dataset, axis=0) / np.sqrt(rep)
+
+    # for decay plot
+    reward_over_t_avg = np.mean(reward_over_t_dataset, axis=0)
+    regret_over_t_avg = np.mean(regret_over_t_dataset, axis=0)
+
+    reward_over_t_std_err = np.std(
+        reward_over_t_dataset, axis=0) / np.sqrt(rep)
+    regret_over_t_std_err = np.std(
+        regret_over_t_dataset, axis=0) / np.sqrt(rep)
+    # print(regret_over_t_dataset)
+    print(regret_over_t_std_err)
+
+    # plot the data
+    # input: (dataset, dataset_name, xlabel, ylabel, title, plot_filename)
+    plot_data(regret_avg, algo_name + " regret set",
+              "rounds", "value", algo_name, algo_name+".png")
+    # decay plot suppose to show that with more rounds, the regret will decrease
+    plot_data(regret_over_t_avg, algo_name + " regret set",
+              "rounds", "value", algo_name, algo_name+"_decay.png")
+
+    # input: (rounds, algo_name, dataset, std_err_dataset, xlabel, ylabel, title, plot_filename)
+    plot_data_with_error_bar(rounds, algo_name, regret_avg, regret_std_err,
+                             "rounds", "value", algo_name, algo_name+"_with_error_bar.png")
+    plot_data_with_error_bar(rounds, algo_name, regret_over_t_avg, regret_over_t_std_err,
+                             "rounds", "value", algo_name, algo_name+"decay_with_error_bar.png")
+
+
+def plot_data(dataset, dataset_name, xlabel, ylabel, title, plot_filename):
+    plt.plot(dataset)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
-    # plt.legend(['reward', 'regret'], loc='upper left')
+    plt.legend([dataset_name], loc='upper left')
     plt.savefig(plot_filename)
     plt.close()
 
 
-def simulation(rounds=int(10000)):
+def plot_data_with_error_bar(rounds, algo_name, dataset, std_err_dataset, xlabel, ylabel, title, plot_filename):
+    time = np.arange(rounds)
+    plt.plot(time, dataset, label='Average ' + algo_name + ' Regret')
+    plt.fill_between(time,
+                     dataset - std_err_dataset,
+                     dataset + std_err_dataset,
+                     color='lightblue', alpha=0.2, label='Standard Error')
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.savefig(plot_filename)
+    plt.close()
+
+
+def simulation(rounds=int(50)):
     ucb_reward_dataset = []
     ucb_regret_dataset = []
     ucb_reward_over_t = []
@@ -195,24 +243,20 @@ def simulation(rounds=int(10000)):
         ucb_reward_over_t.append(ucb_total_reward/float(t+1))
         ucb_regret_over_t.append(ucb_total_regret/float(t+1))
 
-    return ucb_reward_dataset, ucb_regret_dataset, ucb_reward_over_t, ucb_regret_over_t
+    return rounds, ucb_reward_dataset, ucb_regret_dataset, ucb_reward_over_t, ucb_regret_over_t
+
 
 def main():
-    # TODO: offline procedure to extract information
 
-    ucb_reward_dataset = np.array([])
-    ucb_regret_dataset = np.array([])
-    ucb_reward_over_t_dataset = np.array([])
-    ucb_regret_over_t_dataset = np.array([])
-
-    # run 100 times simulation, each time 100 rounds
+    # run 10 times simulation, each time 100 rounds
     ucb_reward_dataset = None
     ucb_regret_dataset = None
+    ucb_reward_over_t_dataset = None
+    ucb_regret_over_t_dataset = None
 
-    rounds = 10
-    for _ in range(rounds):
-        ucb_reward_data, ucb_regret_data, ucb_reward_over_t_data, ucb_regret_over_t_data = simulation()
-
+    rep = 10
+    for _ in range(rep):
+        rounds, ucb_reward_data, ucb_regret_data, ucb_reward_over_t_data, ucb_regret_over_t_data = simulation()
         if ucb_reward_dataset is None:
             ucb_reward_dataset = np.array([ucb_reward_data])
             ucb_regret_dataset = np.array([ucb_regret_data])
@@ -221,18 +265,12 @@ def main():
         else:
             ucb_reward_dataset = np.vstack((ucb_reward_dataset, ucb_reward_data))
             ucb_regret_dataset = np.vstack((ucb_regret_dataset, ucb_regret_data))
-            ucb_reward_over_t_dataset = np.vstack([ucb_reward_over_t_data])
-            ucb_regret_over_t_dataset = np.vstack([ucb_regret_over_t_data])
-    
-    ucb_reward_avg = np.mean(ucb_reward_dataset, axis=0)
-    ucb_regret_avg = np.mean(ucb_regret_dataset, axis=0)
-    ucb_reward_over_t_avg = np.mean(ucb_reward_over_t_dataset, axis=0)
-    ucb_regret_over_t_avg = np.mean(ucb_regret_over_t_dataset, axis=0)
+            ucb_reward_over_t_dataset = np.vstack((
+                ucb_reward_over_t_dataset,ucb_reward_over_t_data))
+            ucb_regret_over_t_dataset = np.vstack((ucb_regret_over_t_dataset, ucb_regret_over_t_data))
 
-    # (reward_dataset, regret_dataset, xlabel, ylabel, title, plot_filename)
-    plot_data(ucb_reward_avg, ucb_regret_avg, "rounds", "value", "UCB", "ucb1.png")
-    # decay plot suppose to show that with more rounds, the regret will decrease
-    plot_data(ucb_reward_over_t_avg, ucb_regret_over_t_avg, "rounds", "value", "UCB", "ucb_decay.png")
+    calculation_and_plotting(rep, rounds, ucb_reward_dataset, ucb_regret_dataset,
+                             ucb_reward_over_t_dataset, ucb_regret_over_t_dataset, 'ucb')
 
 
 if __name__ == "__main__":
