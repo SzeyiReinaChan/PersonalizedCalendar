@@ -193,7 +193,7 @@ def plot_2_data_sets_with_error_bar(rounds, algo_1_name, dataset_1, std_err_data
     plt.savefig(plot_filename)
     plt.close()
 
-def simulation(rounds=int(2500)):
+def simulation(rounds=int(10000)):
     ucb_reward_dataset = []
     ucb_regret_dataset = []
     ucb_reward_over_t = []
