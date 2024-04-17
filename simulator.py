@@ -2,6 +2,7 @@ import numpy as np
 import random
 import copy
 from linearUCB import LinearUCB
+import matplotlib.pyplot as plt
 np.random.seed(0)
 random.seed(0)
 
@@ -96,6 +97,31 @@ def eligibleActionsGenerator(st_irrelevant_calendar):
         print(i)
     return slots_available, possible_calendars
 
+def plot_data(dataset_1, dataset_2, title, plot_filename):
+    # reward = dataset_1
+    # regret = dataset_2
+    # plt.plot(reward)
+    # plt.plot(regret) 
+    # plt.xlabel('rounds')
+    # plt.ylabel('reward value')
+    # plt.title(title)
+    # plt.legend(['reward', 'regret'], loc='upper left')
+    # plt.savefig(plot_filename)
+    # plt.close()
+
+
+    pp = dataset_1
+    ucb = dataset_2
+    plt.plot(pp)
+    plt.plot(ucb)
+    
+    plt.xlabel('rounds')
+    plt.ylabel('reward value')
+    plt.title(title)
+    plt.legend(['pp', 'ucb'], loc='upper left')
+    plt.savefig(plot_filename)
+    plt.close()
+
 
 def simulation(rounds=2):
     # initialize_feature = featureListGenerator(
@@ -119,6 +145,11 @@ def simulation(rounds=2):
     ucb_total_reward = 0.0
     pp_total_reward = 0.0
     pp_total_feedback_reward = 0.0
+    pp_total_regret = 0.0
+
+    pp_total_reward_dataset = []
+    pp_total_feedback_reward_dataset = []
+    pp_total_regret_dataset = []
 
     #initialize weights for perceptron
     num_features = number_of_slots * len(relevant_events)
@@ -170,6 +201,7 @@ def simulation(rounds=2):
             if val > max_val:
                 max_val = val
                 best_action = calendar
+                
         #Get the reward for the best action based on Perceptron
         pp_reward = np.dot(preference, featureListGenerator(best_action, [number_of_slots]))
         print("Reard for best action based on Perceptron: ", pp_reward)
@@ -192,6 +224,13 @@ def simulation(rounds=2):
         pp_total_feedback_reward += feedback_reward
         print("\npp total_feedback_reward=", pp_total_feedback_reward)
 
+        pp_total_regret += abs(pp_reward - feedback_reward)
+        print("\npp total_regret=", pp_total_regret)
+
+        pp_total_reward_dataset.append(pp_total_reward)
+        pp_total_feedback_reward_dataset.append(pp_total_feedback_reward)
+        pp_total_regret_dataset.append(pp_total_regret)
+
         #Update the weights based on the feedback
         phi_best_action = np.array(featureListGenerator(best_action, [number_of_slots]))
         phi_feedback = np.array(featureListGenerator(feedback, [number_of_slots]))
@@ -199,6 +238,7 @@ def simulation(rounds=2):
         w += phi_feedback - phi_best_action
 
     print("Final weights after simulation:", w)
+    plot_data(pp_total_feedback_reward, ucb_total_reward, "pp vs ucb", "pp.png")
 
         # action_index = preference_perceptron.predict(feature_factors)
         # chosen_action = possible_calendars[action_index]
@@ -342,7 +382,7 @@ def main():
     # TODO: offline procedure to extract information
     # testCase1()
 
-    simulation()
+    simulation(int(1e2))
 
 
 if __name__ == "__main__":
