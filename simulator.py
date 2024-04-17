@@ -66,15 +66,13 @@ def get_irrelevant_calendar():
         # allow 1 in max for each irrelevant event
         num_each = np.random.randint(0, 2, size=1)[0]
         for _ in range(num_each):
-            # randomly assign the position for the irrelevant events
-            probability = np.random.uniform(0, 1, total_slots)
-            probability_normalized = probability / probability.sum()
-            each_position = np.random.choice(
-                [0, 1, 2, 3, 4], p=probability_normalized)
-            # print("each_position=", each_position)
+            # Randomly select a day and time slot for each irrelevant event
+            day = np.random.randint(0, num_days)
+            time_slot = np.random.randint(0, num_slots_per_day)
+            position = day * num_slots_per_day + time_slot
 
-            if st_irrelevant_calendar[each_position] == -1:
-                st_irrelevant_calendar[each_position] = each
+            if st_irrelevant_calendar[position] == -1:
+                st_irrelevant_calendar[position] = each
             else:
                 # if there is already an event, skip
                 # print("Skipped placement")
@@ -208,12 +206,12 @@ def simulation(rounds=int(2500)):
 
     # simulate preference
     preference = np.random.uniform(
-        0, 1, len(relevant_events)*number_of_slots)
+        0, 1, len(relevant_events)*total_slots)
     # print("============Preference============")
     # print("preference=", preference)
 
     # initialize the algorithm
-    linear_ucb = LinearUCB(relevant_events, number_of_slots)
+    linear_ucb = LinearUCB(relevant_events, total_slots)
     # initialize reward
     ucb_total_reward = 0.0
     ucb_total_regret = 0.0
@@ -223,7 +221,7 @@ def simulation(rounds=int(2500)):
     pp_total_regret = 0.0
 
     #initialize weights for perceptron
-    num_features = len(relevant_events)*number_of_slots
+    num_features = len(relevant_events) * total_slots 
     w = np.zeros(num_features)
 
     # Rounds of simulations
@@ -238,7 +236,7 @@ def simulation(rounds=int(2500)):
         feature_factors = []
         for each_possible_calendar in possible_calendars:
             feature_factors.append(featureListGenerator(
-                each_possible_calendar, [number_of_slots]))
+                each_possible_calendar, [total_slots]))
 
         ucb_chosen_action_at = linear_ucb.actionSelection(
             possible_calendars, feature_factors)
@@ -258,7 +256,7 @@ def simulation(rounds=int(2500)):
 
         # get the reward - reward of the true human preference
         chosen_action_feature_list = featureListGenerator(
-            ucb_chosen_action_at, [number_of_slots])
+            ucb_chosen_action_at, [total_slots])
         ucb_human_reward = np.dot(preference, chosen_action_feature_list)
         # print("ucb human reward=", ucb_human_reward)
 
@@ -292,20 +290,20 @@ def simulation(rounds=int(2500)):
         best_action = None
         max_val = float('-inf')
         for calendar in possible_calendars:
-            feature_vector = featureListGenerator(calendar, [number_of_slots])
+            feature_vector = featureListGenerator(calendar, [total_slots])
             val = np.dot(w.T, feature_vector)
             if val > max_val:
                 max_val = val
                 best_action = calendar
         #Get reward for best action based on preference
-        pp_reward = np.dot(preference, featureListGenerator(best_action, [number_of_slots]))
+        pp_reward = np.dot(preference, featureListGenerator(best_action, [total_slots]))
         # print("Reward for best action based on Perceptron: ", pp_reward)
         pp_total_reward += pp_reward
 
         #obtain feedback by selecting from calendars with rewards greater than or equal to the best action reward
         feedback_calendars = []
         for calendar in possible_calendars:
-            calendar_reward = np.dot(preference, featureListGenerator(calendar, [number_of_slots]))
+            calendar_reward = np.dot(preference, featureListGenerator(calendar, [total_slots]))
             if calendar_reward >= pp_reward:
                 feedback_calendars.append(calendar)
         if not feedback_calendars:
@@ -314,15 +312,15 @@ def simulation(rounds=int(2500)):
         #Randomly select a feedback calendar
         feedback_index = np.random.choice(len(feedback_calendars))
         feedback = feedback_calendars[feedback_index]
-        feedback_reward = np.dot(preference, featureListGenerator(feedback, [number_of_slots]))
+        feedback_reward = np.dot(preference, featureListGenerator(feedback, [total_slots]))
         pp_total_feedback_reward += feedback_reward
 
         #Regret calculation
-        best_possible_reward_pp = max(np.dot(preference, featureListGenerator(calendar, [number_of_slots])) for calendar in possible_calendars)
+        best_possible_reward_pp = max(np.dot(preference, featureListGenerator(calendar, [total_slots])) for calendar in possible_calendars)
         pp_total_regret += best_possible_reward_pp - pp_reward
         
-        phi_best_action = np.array(featureListGenerator(best_action, [number_of_slots]))
-        phi_feedback = np.array(featureListGenerator(feedback, [number_of_slots]))
+        phi_best_action = np.array(featureListGenerator(best_action, [total_slots]))
+        phi_feedback = np.array(featureListGenerator(feedback, [total_slots]))
 
         #Update weights
         w +=  phi_feedback - phi_best_action 
