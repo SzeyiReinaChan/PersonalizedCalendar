@@ -267,7 +267,7 @@ def simulation(rounds=int(50)):
                 best_action = calendar
         #Get reward for best action based on preference
         pp_reward = np.dot(preference, featureListGenerator(best_action, [number_of_slots]))
-        print("Reward for best action based on Perceptron: ", pp_reward)
+        # print("Reward for best action based on Perceptron: ", pp_reward)
         pp_total_reward += pp_reward
 
         #obtain feedback by selecting from calendars with rewards greater than or equal to the best action reward
