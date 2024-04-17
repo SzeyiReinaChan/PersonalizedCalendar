@@ -286,8 +286,8 @@ def simulation(rounds=int(50)):
         pp_total_feedback_reward += feedback_reward
 
         #Regret calculation
-        best_possible_reward = max(np.dot(preference, featureListGenerator(calendar, [number_of_slots])) for calendar in possible_calendars)
-        pp_total_regret += best_possible_reward - pp_reward
+        best_possible_reward_pp = max(np.dot(preference, featureListGenerator(calendar, [number_of_slots])) for calendar in possible_calendars)
+        pp_total_regret += best_possible_reward_pp - pp_reward
         
         phi_best_action = np.array(featureListGenerator(best_action, [number_of_slots]))
         phi_feedback = np.array(featureListGenerator(feedback, [number_of_slots]))
