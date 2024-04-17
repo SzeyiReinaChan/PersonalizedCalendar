@@ -169,6 +169,11 @@ def simulation(rounds=int(50)):
     ucb_reward_over_t = []
     ucb_regret_over_t = []
 
+    pp_reward_dataset = []
+    pp_regret_dataset = []
+    pp_reward_over_t = []
+    pp_regret_over_t = []
+
     # simulate preference
     preference = np.random.uniform(
         0, 1, len(relevant_events)*number_of_slots)
@@ -180,6 +185,14 @@ def simulation(rounds=int(50)):
     # initialize reward
     ucb_total_reward = 0.0
     ucb_total_regret = 0.0
+
+    pp_total_reward = 0.0
+    pp_total_feedback_reward = 0.0
+    pp_total_regret = 0.0
+
+    #initialize weights for perceptron
+    num_features = len(relevant_events)*number_of_slots
+    w = np.zeros(num_features)
 
     # Rounds of simulations
     for t in range(rounds):
@@ -243,20 +256,69 @@ def simulation(rounds=int(50)):
         ucb_reward_over_t.append(ucb_total_reward/float(t+1))
         ucb_regret_over_t.append(ucb_total_regret/float(t+1))
 
-    return rounds, ucb_reward_dataset, ucb_regret_dataset, ucb_reward_over_t, ucb_regret_over_t
+        # Preference Perceptron simulation===================================
+        best_action = None
+        max_val = float('-inf')
+        for calendar in possible_calendars:
+            feature_vector = featureListGenerator(calendar, [number_of_slots])
+            val = np.dot(w, feature_vector)
+            if val > max_val:
+                max_val = val
+                best_action = calendar
+        #Get reward for best action based on preference
+        pp_reward = np.dot(preference, featureListGenerator(best_action, [number_of_slots]))
+        print("Reward for best action based on Perceptron: ", pp_reward)
+        pp_total_reward += pp_reward
+
+        #obtain feedback by selecting from calendars with rewards greater than or equal to the best action reward
+        feedback_calendars = []
+        for calendar in possible_calendars:
+            calendar_reward = np.dot(preference, featureListGenerator(calendar, [number_of_slots]))
+            if calendar_reward >= pp_reward:
+                feedback_calendars.append(calendar)
+        if not feedback_calendars:
+            feedback_calendars.append(best_action)
+
+        #Randomly select a feedback calendar
+        feedback_index = np.random.choice(len(feedback_calendars))
+        feedback = feedback_calendars[feedback_index]
+        feedback_reward = np.dot(preference, featureListGenerator(feedback, [number_of_slots]))
+        pp_total_feedback_reward += feedback_reward
+
+        #Regret calculation
+        best_possible_reward = max(np.dot(preference, featureListGenerator(calendar, [number_of_slots])) for calendar in possible_calendars)
+        pp_total_regret += best_possible_reward - pp_reward
+        
+        phi_best_action = np.array(featureListGenerator(best_action, [number_of_slots]))
+        phi_feedback = np.array(featureListGenerator(feedback, [number_of_slots]))
+
+        #Update weights
+        w += phi_best_action - phi_feedback
+
+        pp_reward_dataset.append(pp_total_reward)
+        pp_regret_dataset.append(pp_total_regret)
+        pp_reward_over_t.append(pp_total_reward / (t + 1))
+        pp_regret_over_t.append(pp_total_regret / (t + 1))
+
+    return rounds, ucb_reward_dataset, ucb_regret_dataset, ucb_reward_over_t, ucb_regret_over_t, pp_reward_dataset, pp_regret_dataset, pp_reward_over_t, pp_regret_over_t
 
 
 def main():
-
     # run 10 times simulation, each time 100 rounds
     ucb_reward_dataset = None
     ucb_regret_dataset = None
     ucb_reward_over_t_dataset = None
     ucb_regret_over_t_dataset = None
 
+    pp_reward_dataset = None
+    pp_regret_dataset = None
+    pp_reward_over_t_dataset = None
+    pp_regret_over_t_dataset = None
+
     rep = 10
     for _ in range(rep):
-        rounds, ucb_reward_data, ucb_regret_data, ucb_reward_over_t_data, ucb_regret_over_t_data = simulation()
+        rounds, ucb_reward_data, ucb_regret_data, ucb_reward_over_t_data, ucb_regret_over_t_data,\
+        pp_reward_data, pp_regret_data, pp_reward_over_t_data, pp_regret_over_t_data = simulation()
         if ucb_reward_dataset is None:
             ucb_reward_dataset = np.array([ucb_reward_data])
             ucb_regret_dataset = np.array([ucb_regret_data])
@@ -268,9 +330,24 @@ def main():
             ucb_reward_over_t_dataset = np.vstack((
                 ucb_reward_over_t_dataset,ucb_reward_over_t_data))
             ucb_regret_over_t_dataset = np.vstack((ucb_regret_over_t_dataset, ucb_regret_over_t_data))
+        
+        # Store PP results
+        if pp_reward_dataset is None:
+            pp_reward_dataset = np.array([pp_reward_data])
+            pp_regret_dataset = np.array([pp_regret_data])
+            pp_reward_over_t_dataset = np.array([pp_reward_over_t_data])
+            pp_regret_over_t_dataset = np.array([pp_regret_over_t_data])
+        else:
+            pp_reward_dataset = np.vstack((pp_reward_dataset, pp_reward_data))
+            pp_regret_dataset = np.vstack((pp_regret_dataset, pp_regret_data))
+            pp_reward_over_t_dataset = np.vstack((pp_reward_over_t_dataset, pp_reward_over_t_data))
+            pp_regret_over_t_dataset = np.vstack((pp_regret_over_t_dataset, pp_regret_over_t_data))
+
 
     calculation_and_plotting(rep, rounds, ucb_reward_dataset, ucb_regret_dataset,
                              ucb_reward_over_t_dataset, ucb_regret_over_t_dataset, 'ucb')
+    calculation_and_plotting(rep, rounds, pp_reward_dataset, pp_regret_dataset,
+                             pp_reward_over_t_dataset, pp_regret_over_t_dataset, 'pp')
 
 
 if __name__ == "__main__":
