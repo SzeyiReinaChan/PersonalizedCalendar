@@ -122,7 +122,7 @@ def calculation_and_plotting(rep, rounds, reward_dataset, regret_dataset,
     regret_over_t_std_err = np.std(
         regret_over_t_dataset, axis=0) / np.sqrt(rep)
     # print(regret_over_t_dataset)
-    print(regret_over_t_std_err)
+    # print(regret_over_t_std_err)
 
     # plot the data
     # input: (dataset, dataset_name, xlabel, ylabel, title, plot_filename)
@@ -163,7 +163,7 @@ def plot_data_with_error_bar(rounds, algo_name, dataset, std_err_dataset, xlabel
     plt.close()
 
 
-def simulation(rounds=int(50)):
+def simulation(rounds=int(2500)):
     ucb_reward_dataset = []
     ucb_regret_dataset = []
     ucb_reward_over_t = []
@@ -261,7 +261,7 @@ def simulation(rounds=int(50)):
         max_val = float('-inf')
         for calendar in possible_calendars:
             feature_vector = featureListGenerator(calendar, [number_of_slots])
-            val = np.dot(w, feature_vector)
+            val = np.dot(w.T, feature_vector)
             if val > max_val:
                 max_val = val
                 best_action = calendar
@@ -293,7 +293,7 @@ def simulation(rounds=int(50)):
         phi_feedback = np.array(featureListGenerator(feedback, [number_of_slots]))
 
         #Update weights
-        w += phi_best_action - phi_feedback
+        w +=  phi_feedback - phi_best_action 
 
         pp_reward_dataset.append(pp_total_reward)
         pp_regret_dataset.append(pp_total_regret)
