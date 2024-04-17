@@ -171,7 +171,24 @@ def plot_data_with_error_bar(rounds, algo_name, dataset, std_err_dataset, xlabel
     plt.title(title)
     plt.savefig(plot_filename)
     plt.close()
-
+def plot_2_data_sets_with_error_bar(rounds, algo_1_name, dataset_1, std_err_dataset_1, algo_2_name, dataset_2, std_err_dataset_2, xlabel, ylabel, title, plot_filename):
+    time = np.arange(rounds)
+    plt.plot(time, dataset_1, label='Average ' + algo_1_name + ' Regret')
+    plt.fill_between(time,
+                     dataset_1 - std_err_dataset_1,
+                     dataset_1 + std_err_dataset_1,
+                     color='lightblue', alpha=0.2, label='Standard Error')
+    plt.plot(time, dataset_2, label='Average ' + algo_2_name + ' Regret')
+    plt.fill_between(time,
+                     dataset_2 - std_err_dataset_2,
+                     dataset_2 + std_err_dataset_2,
+                     color='navajowhite', alpha=0.2, label='Standard Error')
+    plt.legend([algo_1_name, algo_1_name + " standard error", algo_2_name, algo_2_name +" standard error"], loc='upper left')
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.savefig(plot_filename)
+    plt.close()
 
 def simulation(rounds=int(2500)):
     ucb_reward_dataset = []
@@ -363,6 +380,9 @@ def main():
                                                                                 pp_regret_over_t_dataset, 'pp')
     plot_2_data_sets(regret_avg_ucb, regret_avg_pp, 'UCB', 'PP', 'Regret Comparison', 'regret_comparison.png')
     plot_2_data_sets(regret_over_t_avg_ucb, regret_over_t_avg_pp, 'UCB', 'PP', 'Regret Decay Comparison', 'regret_over_t_comparison.png')
+
+    plot_2_data_sets_with_error_bar(rounds, 'UCB', regret_avg_ucb, regret_std_err_ucb, 'PP', regret_avg_pp, regret_std_err_pp, 'rounds', 'value', 'Regret Comparison with Error Bar', 'regret_comparison_with_error_bar.png')
+    plot_2_data_sets_with_error_bar(rounds, 'UCB', regret_over_t_avg_ucb, regret_over_t_std_err_ucb, 'PP', regret_over_t_avg_pp, regret_over_t_std_err_pp, 'rounds', 'value', 'Regret Decay Comparison with Error Bar', 'regret_over_t_comparison_with_error_bar.png')
 
 
 if __name__ == "__main__":
