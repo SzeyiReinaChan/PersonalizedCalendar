@@ -149,15 +149,17 @@ def plot_data(dataset, dataset_name, xlabel, ylabel, title, plot_filename):
     plt.savefig(plot_filename)
     plt.close()
 
+
 def plot_2_data_sets(dataset_1, dataset_2, dataset_1_legend, dataset_2_legend, title, plot_filename):
     plt.plot(dataset_1)
-    plt.plot(dataset_2) 
+    plt.plot(dataset_2)
     plt.xlabel('rounds')
     plt.ylabel('value')
     plt.title(title)
     plt.legend([dataset_1_legend, dataset_2_legend], loc='upper left')
     plt.savefig(plot_filename)
     plt.close()
+
 
 def plot_data_with_error_bar(rounds, algo_name, dataset, std_err_dataset, xlabel, ylabel, title, plot_filename):
     time = np.arange(rounds)
@@ -171,6 +173,8 @@ def plot_data_with_error_bar(rounds, algo_name, dataset, std_err_dataset, xlabel
     plt.title(title)
     plt.savefig(plot_filename)
     plt.close()
+
+
 def plot_2_data_sets_with_error_bar(rounds, algo_1_name, dataset_1, std_err_dataset_1, algo_2_name, dataset_2, std_err_dataset_2, xlabel, ylabel, title, plot_filename):
     time = np.arange(rounds)
     plt.plot(time, dataset_1, label='Average ' + algo_1_name + ' Regret')
@@ -183,12 +187,14 @@ def plot_2_data_sets_with_error_bar(rounds, algo_1_name, dataset_1, std_err_data
                      dataset_2 - std_err_dataset_2,
                      dataset_2 + std_err_dataset_2,
                      color='navajowhite', alpha=0.2, label='Standard Error')
-    plt.legend([algo_1_name, algo_1_name + " standard error", algo_2_name, algo_2_name +" standard error"], loc='upper left')
+    plt.legend([algo_1_name, algo_1_name + " standard error",
+               algo_2_name, algo_2_name + " standard error"], loc='upper left')
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
     plt.savefig(plot_filename)
     plt.close()
+
 
 def simulation(rounds=int(2500)):
     ucb_reward_dataset = []
@@ -214,10 +220,10 @@ def simulation(rounds=int(2500)):
     ucb_total_regret = 0.0
 
     pp_total_reward = 0.0
-    pp_total_feedback_reward = 0.0
+    # pp_total_feedback_reward = 0.0
     pp_total_regret = 0.0
 
-    #initialize weights for perceptron
+    # initialize weights for perceptron
     num_features = len(relevant_events)*number_of_slots
     w = np.zeros(num_features)
 
@@ -264,7 +270,8 @@ def simulation(rounds=int(2500)):
         # print("ucb noisy reward=", ucb_noisy_reward)
 
         # getting the regression number: how far away from the best possible reward?
-        regret_number = best_possible_reward-ucb_noisy_reward
+        # regret_number = best_possible_reward-ucb_noisy_reward
+        regret_number = best_possible_reward-ucb_human_reward
         # print("ucb regression_number=", regret_number)
 
         # update the algorithm based on the reward
@@ -286,41 +293,51 @@ def simulation(rounds=int(2500)):
         # Preference Perceptron simulation===================================
         best_action = None
         max_val = float('-inf')
-        for calendar in possible_calendars:
+        for calendar in possible_calendars:  # yt
             feature_vector = featureListGenerator(calendar, [number_of_slots])
+            assert np.shape(w) == (len(feature_vector), )
+            assert np.shape(feature_vector) == (len(feature_vector), )
             val = np.dot(w.T, feature_vector)
             if val > max_val:
                 max_val = val
                 best_action = calendar
-        #Get reward for best action based on preference
-        pp_reward = np.dot(preference, featureListGenerator(best_action, [number_of_slots]))
+        # Get reward for best action based on preference
+        pp_reward = np.dot(preference, featureListGenerator(
+            best_action, [number_of_slots]))  # yt's reward
         # print("Reward for best action based on Perceptron: ", pp_reward)
         pp_total_reward += pp_reward
 
-        #obtain feedback by selecting from calendars with rewards greater than or equal to the best action reward
+        # obtain feedback by selecting from calendars with rewards greater than or equal to the best action reward
         feedback_calendars = []
         for calendar in possible_calendars:
-            calendar_reward = np.dot(preference, featureListGenerator(calendar, [number_of_slots]))
+            calendar_reward = np.dot(
+                preference, featureListGenerator(calendar, [number_of_slots]))
             if calendar_reward >= pp_reward:
                 feedback_calendars.append(calendar)
         if not feedback_calendars:
             feedback_calendars.append(best_action)
 
-        #Randomly select a feedback calendar
+        # Randomly select a feedback calendar
         feedback_index = np.random.choice(len(feedback_calendars))
+        # ybar_t, which is one of the actions better than yt.
         feedback = feedback_calendars[feedback_index]
-        feedback_reward = np.dot(preference, featureListGenerator(feedback, [number_of_slots]))
-        pp_total_feedback_reward += feedback_reward
+        # feedback_reward = np.dot(preference, featureListGenerator(
+        #     feedback, [number_of_slots]))  # ybar_t's reward
+        # pp_total_feedback_reward += feedback_reward # how good human feedback is
 
-        #Regret calculation
-        best_possible_reward_pp = max(np.dot(preference, featureListGenerator(calendar, [number_of_slots])) for calendar in possible_calendars)
+        # Regret calculation
+        best_possible_reward_pp = max(np.dot(preference, featureListGenerator(
+            calendar, [number_of_slots])) for calendar in possible_calendars)  # y*t's reward
+        assert best_possible_reward == best_possible_reward_pp
+
         pp_total_regret += best_possible_reward_pp - pp_reward
-        
-        phi_best_action = np.array(featureListGenerator(best_action, [number_of_slots]))
-        phi_feedback = np.array(featureListGenerator(feedback, [number_of_slots]))
+        phi_best_action = np.array(
+            featureListGenerator(best_action, [number_of_slots]))  # phi(yt)
+        phi_feedback = np.array(
+            featureListGenerator(feedback, [number_of_slots]))  # phi(ybar_t)
 
-        #Update weights
-        w +=  phi_feedback - phi_best_action 
+        # Update weights
+        w += phi_feedback - phi_best_action
 
         pp_reward_dataset.append(pp_total_reward)
         pp_regret_dataset.append(pp_total_regret)
@@ -344,20 +361,23 @@ def main():
 
     rep = 10
     for _ in range(rep):
-        rounds, ucb_reward_data, ucb_regret_data, ucb_reward_over_t_data, ucb_regret_over_t_data,\
-        pp_reward_data, pp_regret_data, pp_reward_over_t_data, pp_regret_over_t_data = simulation()
+        rounds, ucb_reward_data, ucb_regret_data, ucb_reward_over_t_data, ucb_regret_over_t_data, \
+            pp_reward_data, pp_regret_data, pp_reward_over_t_data, pp_regret_over_t_data = simulation()
         if ucb_reward_dataset is None:
             ucb_reward_dataset = np.array([ucb_reward_data])
             ucb_regret_dataset = np.array([ucb_regret_data])
             ucb_reward_over_t_dataset = np.array([ucb_reward_over_t_data])
             ucb_regret_over_t_dataset = np.array([ucb_regret_over_t_data])
         else:
-            ucb_reward_dataset = np.vstack((ucb_reward_dataset, ucb_reward_data))
-            ucb_regret_dataset = np.vstack((ucb_regret_dataset, ucb_regret_data))
+            ucb_reward_dataset = np.vstack(
+                (ucb_reward_dataset, ucb_reward_data))
+            ucb_regret_dataset = np.vstack(
+                (ucb_regret_dataset, ucb_regret_data))
             ucb_reward_over_t_dataset = np.vstack((
-                ucb_reward_over_t_dataset,ucb_reward_over_t_data))
-            ucb_regret_over_t_dataset = np.vstack((ucb_regret_over_t_dataset, ucb_regret_over_t_data))
-        
+                ucb_reward_over_t_dataset, ucb_reward_over_t_data))
+            ucb_regret_over_t_dataset = np.vstack(
+                (ucb_regret_over_t_dataset, ucb_regret_over_t_data))
+
         # Store PP results
         if pp_reward_dataset is None:
             pp_reward_dataset = np.array([pp_reward_data])
@@ -367,22 +387,28 @@ def main():
         else:
             pp_reward_dataset = np.vstack((pp_reward_dataset, pp_reward_data))
             pp_regret_dataset = np.vstack((pp_regret_dataset, pp_regret_data))
-            pp_reward_over_t_dataset = np.vstack((pp_reward_over_t_dataset, pp_reward_over_t_data))
-            pp_regret_over_t_dataset = np.vstack((pp_regret_over_t_dataset, pp_regret_over_t_data))
+            pp_reward_over_t_dataset = np.vstack(
+                (pp_reward_over_t_dataset, pp_reward_over_t_data))
+            pp_regret_over_t_dataset = np.vstack(
+                (pp_regret_over_t_dataset, pp_regret_over_t_data))
 
-    reward_avg_ucb, regret_avg_ucb, reward_std_err_ucb, regret_std_err_ucb, reward_over_t_avg_ucb, regret_over_t_avg_ucb,\
-    reward_over_t_std_err_ucb, regret_over_t_std_err_ucb = calculation_and_plotting(rep, rounds, ucb_reward_dataset, 
-                                                                                    ucb_regret_dataset, ucb_reward_over_t_dataset, 
-                                                                                    ucb_regret_over_t_dataset, 'ucb')
-    reward_avg_pp, regret_avg_pp, reward_std_err_pp, regret_std_err_pp, reward_over_t_avg_pp, regret_over_t_avg_pp,\
-    reward_over_t_std_err_pp, regret_over_t_std_err_pp = calculation_and_plotting(rep, rounds, pp_reward_dataset, 
-                                                                                pp_regret_dataset, pp_reward_over_t_dataset, 
-                                                                                pp_regret_over_t_dataset, 'pp')
-    plot_2_data_sets(regret_avg_ucb, regret_avg_pp, 'UCB', 'PP', 'Regret Comparison', 'regret_comparison.png')
-    plot_2_data_sets(regret_over_t_avg_ucb, regret_over_t_avg_pp, 'UCB', 'PP', 'Regret Decay Comparison', 'regret_over_t_comparison.png')
+    reward_avg_ucb, regret_avg_ucb, reward_std_err_ucb, regret_std_err_ucb, reward_over_t_avg_ucb, regret_over_t_avg_ucb, \
+        reward_over_t_std_err_ucb, regret_over_t_std_err_ucb = calculation_and_plotting(rep, rounds, ucb_reward_dataset,
+                                                                                        ucb_regret_dataset, ucb_reward_over_t_dataset,
+                                                                                        ucb_regret_over_t_dataset, 'ucb')
+    reward_avg_pp, regret_avg_pp, reward_std_err_pp, regret_std_err_pp, reward_over_t_avg_pp, regret_over_t_avg_pp, \
+        reward_over_t_std_err_pp, regret_over_t_std_err_pp = calculation_and_plotting(rep, rounds, pp_reward_dataset,
+                                                                                      pp_regret_dataset, pp_reward_over_t_dataset,
+                                                                                      pp_regret_over_t_dataset, 'pp')
+    plot_2_data_sets(regret_avg_ucb, regret_avg_pp, 'UCB', 'PP',
+                     'Regret Comparison', 'regret_comparison.png')
+    plot_2_data_sets(regret_over_t_avg_ucb, regret_over_t_avg_pp, 'UCB',
+                     'PP', 'Regret Decay Comparison', 'regret_over_t_comparison.png')
 
-    plot_2_data_sets_with_error_bar(rounds, 'UCB', regret_avg_ucb, regret_std_err_ucb, 'PP', regret_avg_pp, regret_std_err_pp, 'rounds', 'value', 'Regret Comparison with Error Bar', 'regret_comparison_with_error_bar.png')
-    plot_2_data_sets_with_error_bar(rounds, 'UCB', regret_over_t_avg_ucb, regret_over_t_std_err_ucb, 'PP', regret_over_t_avg_pp, regret_over_t_std_err_pp, 'rounds', 'value', 'Regret Decay Comparison with Error Bar', 'regret_over_t_comparison_with_error_bar.png')
+    plot_2_data_sets_with_error_bar(rounds, 'UCB', regret_avg_ucb, regret_std_err_ucb, 'PP', regret_avg_pp, regret_std_err_pp,
+                                    'rounds', 'value', 'Regret Comparison with Error Bar', 'regret_comparison_with_error_bar.png')
+    plot_2_data_sets_with_error_bar(rounds, 'UCB', regret_over_t_avg_ucb, regret_over_t_std_err_ucb, 'PP', regret_over_t_avg_pp,
+                                    regret_over_t_std_err_pp, 'rounds', 'value', 'Regret Decay Comparison with Error Bar', 'regret_over_t_comparison_with_error_bar.png')
 
 
 if __name__ == "__main__":
