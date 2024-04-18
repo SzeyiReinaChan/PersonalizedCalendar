@@ -20,14 +20,15 @@ relevant_events = ["assignment_out", "reading"]
 events = irrelevant_events + relevant_events
 
 # events can only be placed in certain slots
-assignment_out_constrain = [0, 1, 2]
-reading_constrain = [0, 1, 2, 3, 4]
+assignment_out_constrain = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+reading_constrain = [0, 1, 2, 3, 4, 5, 6, 7, 8,
+                     9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
 # Total number of slots (5 for now for simplicity)
 # Will be changed to 24*60/30 = 48 for 30 minutes slots for day implementation
 # number_of_slots = 5
 
-#total number of slots in a week 21
+# total number of slots in a week 21
 num_days = 7
 num_slots_per_day = 3
 total_slots = num_days * num_slots_per_day
@@ -64,7 +65,7 @@ def get_irrelevant_calendar():
     st_irrelevant_calendar = [-1] * total_slots  # empty calendar
     for each in irrelevant_events:
         # allow 1 in max for each irrelevant event
-        num_each = np.random.randint(0, 2, size=1)[0]
+        num_each = np.random.randint(0, 4, size=1)[0]
         for _ in range(num_each):
             # Randomly select a day and time slot for each irrelevant event
             day = np.random.randint(0, num_days)
@@ -152,15 +153,17 @@ def plot_data(dataset, dataset_name, xlabel, ylabel, title, plot_filename):
     plt.savefig(plot_filename)
     plt.close()
 
+
 def plot_2_data_sets(dataset_1, dataset_2, dataset_1_legend, dataset_2_legend, title, plot_filename):
     plt.plot(dataset_1)
-    plt.plot(dataset_2) 
+    plt.plot(dataset_2)
     plt.xlabel('rounds')
     plt.ylabel('value')
     plt.title(title)
     plt.legend([dataset_1_legend, dataset_2_legend], loc='upper left')
     plt.savefig(plot_filename)
     plt.close()
+
 
 def plot_data_with_error_bar(rounds, algo_name, dataset, std_err_dataset, xlabel, ylabel, title, plot_filename):
     time = np.arange(rounds)
@@ -174,6 +177,8 @@ def plot_data_with_error_bar(rounds, algo_name, dataset, std_err_dataset, xlabel
     plt.title(title)
     plt.savefig(plot_filename)
     plt.close()
+
+
 def plot_2_data_sets_with_error_bar(rounds, algo_1_name, dataset_1, std_err_dataset_1, algo_2_name, dataset_2, std_err_dataset_2, xlabel, ylabel, title, plot_filename):
     time = np.arange(rounds)
     plt.plot(time, dataset_1, label='Average ' + algo_1_name + ' Regret')
@@ -186,12 +191,14 @@ def plot_2_data_sets_with_error_bar(rounds, algo_1_name, dataset_1, std_err_data
                      dataset_2 - std_err_dataset_2,
                      dataset_2 + std_err_dataset_2,
                      color='navajowhite', alpha=0.2, label='Standard Error')
-    plt.legend([algo_1_name, algo_1_name + " standard error", algo_2_name, algo_2_name +" standard error"], loc='upper left')
+    plt.legend([algo_1_name, algo_1_name + " standard error",
+               algo_2_name, algo_2_name + " standard error"], loc='upper left')
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
     plt.savefig(plot_filename)
     plt.close()
+
 
 def simulation(rounds=int(10000)):
     ucb_reward_dataset = []
@@ -220,8 +227,8 @@ def simulation(rounds=int(10000)):
     pp_total_feedback_reward = 0.0
     pp_total_regret = 0.0
 
-    #initialize weights for perceptron
-    num_features = len(relevant_events) * total_slots 
+    # initialize weights for perceptron
+    num_features = len(relevant_events) * total_slots
     w = np.zeros(num_features)
 
     # Rounds of simulations
@@ -237,6 +244,7 @@ def simulation(rounds=int(10000)):
         for each_possible_calendar in possible_calendars:
             feature_factors.append(featureListGenerator(
                 each_possible_calendar, [total_slots]))
+            # print("each_possible_calendar=", each_possible_calendar)
 
         ucb_chosen_action_at = linear_ucb.actionSelection(
             possible_calendars, feature_factors)
@@ -267,7 +275,7 @@ def simulation(rounds=int(10000)):
         # print("ucb noisy reward=", ucb_noisy_reward)
 
         # getting the regression number: how far away from the best possible reward?
-        regret_number = best_possible_reward-ucb_noisy_reward
+        regret_number = best_possible_reward-ucb_human_reward
         # print("ucb regression_number=", regret_number)
 
         # update the algorithm based on the reward
@@ -295,35 +303,40 @@ def simulation(rounds=int(10000)):
             if val > max_val:
                 max_val = val
                 best_action = calendar
-        #Get reward for best action based on preference
-        pp_reward = np.dot(preference, featureListGenerator(best_action, [total_slots]))
+        # Get reward for best action based on preference
+        pp_reward = np.dot(preference, featureListGenerator(
+            best_action, [total_slots]))
         # print("Reward for best action based on Perceptron: ", pp_reward)
         pp_total_reward += pp_reward
 
-        #obtain feedback by selecting from calendars with rewards greater than or equal to the best action reward
+        # obtain feedback by selecting from calendars with rewards greater than or equal to the best action reward
         feedback_calendars = []
         for calendar in possible_calendars:
-            calendar_reward = np.dot(preference, featureListGenerator(calendar, [total_slots]))
+            calendar_reward = np.dot(
+                preference, featureListGenerator(calendar, [total_slots]))
             if calendar_reward >= pp_reward:
                 feedback_calendars.append(calendar)
         if not feedback_calendars:
             feedback_calendars.append(best_action)
 
-        #Randomly select a feedback calendar
+        # Randomly select a feedback calendar
         feedback_index = np.random.choice(len(feedback_calendars))
         feedback = feedback_calendars[feedback_index]
-        feedback_reward = np.dot(preference, featureListGenerator(feedback, [total_slots]))
+        feedback_reward = np.dot(
+            preference, featureListGenerator(feedback, [total_slots]))
         pp_total_feedback_reward += feedback_reward
 
-        #Regret calculation
-        best_possible_reward_pp = max(np.dot(preference, featureListGenerator(calendar, [total_slots])) for calendar in possible_calendars)
+        # Regret calculation
+        best_possible_reward_pp = max(np.dot(preference, featureListGenerator(
+            calendar, [total_slots])) for calendar in possible_calendars)
         pp_total_regret += best_possible_reward_pp - pp_reward
-        
-        phi_best_action = np.array(featureListGenerator(best_action, [total_slots]))
+
+        phi_best_action = np.array(
+            featureListGenerator(best_action, [total_slots]))
         phi_feedback = np.array(featureListGenerator(feedback, [total_slots]))
 
-        #Update weights
-        w +=  phi_feedback - phi_best_action 
+        # Update weights
+        w += phi_feedback - phi_best_action
 
         pp_reward_dataset.append(pp_total_reward)
         pp_regret_dataset.append(pp_total_regret)
@@ -334,7 +347,7 @@ def simulation(rounds=int(10000)):
 
 
 def main():
-    # run 10 times simulation, each time 100 rounds
+    # run 10 times simulation, each time 10000 rounds
     ucb_reward_dataset = None
     ucb_regret_dataset = None
     ucb_reward_over_t_dataset = None
@@ -347,20 +360,23 @@ def main():
 
     rep = 10
     for _ in range(rep):
-        rounds, ucb_reward_data, ucb_regret_data, ucb_reward_over_t_data, ucb_regret_over_t_data,\
-        pp_reward_data, pp_regret_data, pp_reward_over_t_data, pp_regret_over_t_data = simulation()
+        rounds, ucb_reward_data, ucb_regret_data, ucb_reward_over_t_data, ucb_regret_over_t_data, \
+            pp_reward_data, pp_regret_data, pp_reward_over_t_data, pp_regret_over_t_data = simulation()
         if ucb_reward_dataset is None:
             ucb_reward_dataset = np.array([ucb_reward_data])
             ucb_regret_dataset = np.array([ucb_regret_data])
             ucb_reward_over_t_dataset = np.array([ucb_reward_over_t_data])
             ucb_regret_over_t_dataset = np.array([ucb_regret_over_t_data])
         else:
-            ucb_reward_dataset = np.vstack((ucb_reward_dataset, ucb_reward_data))
-            ucb_regret_dataset = np.vstack((ucb_regret_dataset, ucb_regret_data))
+            ucb_reward_dataset = np.vstack(
+                (ucb_reward_dataset, ucb_reward_data))
+            ucb_regret_dataset = np.vstack(
+                (ucb_regret_dataset, ucb_regret_data))
             ucb_reward_over_t_dataset = np.vstack((
-                ucb_reward_over_t_dataset,ucb_reward_over_t_data))
-            ucb_regret_over_t_dataset = np.vstack((ucb_regret_over_t_dataset, ucb_regret_over_t_data))
-        
+                ucb_reward_over_t_dataset, ucb_reward_over_t_data))
+            ucb_regret_over_t_dataset = np.vstack(
+                (ucb_regret_over_t_dataset, ucb_regret_over_t_data))
+
         # Store PP results
         if pp_reward_dataset is None:
             pp_reward_dataset = np.array([pp_reward_data])
@@ -370,17 +386,19 @@ def main():
         else:
             pp_reward_dataset = np.vstack((pp_reward_dataset, pp_reward_data))
             pp_regret_dataset = np.vstack((pp_regret_dataset, pp_regret_data))
-            pp_reward_over_t_dataset = np.vstack((pp_reward_over_t_dataset, pp_reward_over_t_data))
-            pp_regret_over_t_dataset = np.vstack((pp_regret_over_t_dataset, pp_regret_over_t_data))
+            pp_reward_over_t_dataset = np.vstack(
+                (pp_reward_over_t_dataset, pp_reward_over_t_data))
+            pp_regret_over_t_dataset = np.vstack(
+                (pp_regret_over_t_dataset, pp_regret_over_t_data))
 
-    reward_avg_ucb, regret_avg_ucb, reward_std_err_ucb, regret_std_err_ucb, reward_over_t_avg_ucb, regret_over_t_avg_ucb,\
-    reward_over_t_std_err_ucb, regret_over_t_std_err_ucb = calculation_and_plotting(rep, rounds, ucb_reward_dataset, 
-                                                                                    ucb_regret_dataset, ucb_reward_over_t_dataset, 
-                                                                                    ucb_regret_over_t_dataset, 'ucb')
-    reward_avg_pp, regret_avg_pp, reward_std_err_pp, regret_std_err_pp, reward_over_t_avg_pp, regret_over_t_avg_pp,\
-    reward_over_t_std_err_pp, regret_over_t_std_err_pp = calculation_and_plotting(rep, rounds, pp_reward_dataset, 
-                                                                                pp_regret_dataset, pp_reward_over_t_dataset, 
-                                                                                pp_regret_over_t_dataset, 'pp')
+    reward_avg_ucb, regret_avg_ucb, reward_std_err_ucb, regret_std_err_ucb, reward_over_t_avg_ucb, regret_over_t_avg_ucb, \
+        reward_over_t_std_err_ucb, regret_over_t_std_err_ucb = calculation_and_plotting(rep, rounds, ucb_reward_dataset,
+                                                                                        ucb_regret_dataset, ucb_reward_over_t_dataset,
+                                                                                        ucb_regret_over_t_dataset, 'ucb')
+    reward_avg_pp, regret_avg_pp, reward_std_err_pp, regret_std_err_pp, reward_over_t_avg_pp, regret_over_t_avg_pp, \
+        reward_over_t_std_err_pp, regret_over_t_std_err_pp = calculation_and_plotting(rep, rounds, pp_reward_dataset,
+                                                                                      pp_regret_dataset, pp_reward_over_t_dataset,
+                                                                                      pp_regret_over_t_dataset, 'pp')
     plot_2_data_sets(regret_avg_ucb, regret_avg_pp, 'UCB', 'PP', 'Regret Comparison', 'regret_comparison.png')
     plot_2_data_sets(regret_over_t_avg_ucb, regret_over_t_avg_pp, 'UCB', 'PP', 'Regret Decay Comparison', 'regret_over_t_comparison.png')
 
