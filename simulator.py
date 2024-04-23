@@ -193,7 +193,7 @@ def plot_2_data_sets_with_error_bar(rounds, algo_1_name, dataset_1, std_err_data
     plt.savefig(plot_filename)
     plt.close()
 
-def simulation(rounds=int(10000)):
+def simulation(rounds=int(2000)):
     ucb_reward_dataset = []
     ucb_regret_dataset = []
     ucb_reward_over_t = []
@@ -309,12 +309,39 @@ def simulation(rounds=int(10000)):
 
         #obtain feedback by selecting from calendars with rewards greater than or equal to the best action reward
         feedback_calendars = []
+        #experiment 1: human feedback is always optimal
+        # for calendar in possible_calendars:
+        #     calendar_reward = np.dot(preference, featureListGenerator(calendar, [total_slots]))
+        #     if calendar_reward >= pp_reward:
+        #         feedback_calendars.append(calendar)
+        # if not feedback_calendars:
+        #     feedback_calendars.append(best_action)
+
+        #experiment 2: human feedback is not optimal
         for calendar in possible_calendars:
             calendar_reward = np.dot(preference, featureListGenerator(calendar, [total_slots]))
-            if calendar_reward >= pp_reward:
+            if calendar_reward <= pp_reward:
                 feedback_calendars.append(calendar)
         if not feedback_calendars:
             feedback_calendars.append(best_action)
+
+        #experiment 3: human feedback is optimal with 50% probability, human feedback is not optimal with 50% probability
+        # if random.randint(0, 1) == 1:#human feedback is optimal
+        #     #obtain feedback by selecting from calendars with rewards greater than or equal to the best action reward
+        #     # feedback_calendars = []
+        #     for calendar in possible_calendars:
+        #         calendar_reward = np.dot(preference, featureListGenerator(calendar, [total_slots]))
+        #         if calendar_reward >= pp_reward:
+        #             feedback_calendars.append(calendar)
+        #     if not feedback_calendars:
+        #         feedback_calendars.append(best_action)
+        # else: #human feedback is not optimal
+        #     for calendar in possible_calendars:
+        #         calendar_reward = np.dot(preference, featureListGenerator(calendar, [total_slots]))
+        #         if calendar_reward <= pp_reward:
+        #             feedback_calendars.append(calendar)
+        #     if not feedback_calendars:
+        #         feedback_calendars.append(best_action)
 
         #Randomly select a feedback calendar
         feedback_index = np.random.choice(len(feedback_calendars))
@@ -324,7 +351,11 @@ def simulation(rounds=int(10000)):
 
         #Regret calculation
         best_possible_reward_pp = max(np.dot(preference, featureListGenerator(calendar, [total_slots])) for calendar in possible_calendars)
-        pp_total_regret += best_possible_reward_pp - pp_reward
+        # pp_total_regret += best_possible_reward_pp - pp_reward
+        # if random.randint(0, 1) == 1:
+        #     pp_total_regret += pp_reward - best_possible_reward_pp
+        # else:
+        pp_total_regret +=  best_possible_reward_pp - pp_reward
         
         phi_best_action = np.array(featureListGenerator(best_action, [total_slots]))
         phi_feedback = np.array(featureListGenerator(feedback, [total_slots]))
@@ -424,7 +455,8 @@ def main():
     
     plot_data(convergence_pp_lower_threshold_dataset, "PP Convergence Lower Threshold", "rep", "rounds", "PP Convergence", "convergence_pp_lower_threshold.png")
     plot_data(convergence_ucb_lower_threshold_dataset, "UCB Convergence Lower Threshold", "rep", "rounds", "UCB Convergence", "convergence_ucb_lower_threshold.png")
-    plot_2_data_sets(convergence_pp_lower_threshold_dataset, convergence_ucb_lower_threshold_dataset, 'PP', 'UCB', 'Convergence Lower Threshold Comparison', 'convergence_lower_threshold_comparison.png')
+    # plot_2_data_sets(convergence_pp_lower_threshold_dataset, convergence_ucb_lower_threshold_dataset, 'PP', 'UCB', 'Convergence Lower Threshold Comparison', 'convergence_lower_threshold_comparison.png')
+    plot_2_data_sets(convergence_ucb_lower_threshold_dataset, convergence_pp_lower_threshold_dataset, 'UCB', 'PP', 'Convergence Lower Threshold Comparison', 'convergence_lower_threshold_comparison.png')
 
     print("UCB Average Convergence: ", np.mean(convergence_ucb_dataset))
     print("PP Average Convergence: ", np.mean(convergence_pp_dataset))
