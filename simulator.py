@@ -27,8 +27,6 @@ reading_constrain = [0, 1, 2, 3, 4]
 # Will be changed to 24*60/30 = 48 for 30 minutes slots for day implementation
 number_of_slots = 5
 
-# For generating the preference for each event in each slot.
-
 
 def preferenceGenerator(calendar):
     preference_count = 0
@@ -196,7 +194,7 @@ def plot_2_data_sets_with_error_bar(rounds, algo_1_name, dataset_1, std_err_data
     plt.close()
 
 
-def simulation(rounds=int(2500)):
+def simulation(rounds=int(2000)):
     ucb_reward_dataset = []
     ucb_regret_dataset = []
     ucb_reward_over_t = []
@@ -226,6 +224,7 @@ def simulation(rounds=int(2500)):
     # initialize weights for perceptron
     num_features = len(relevant_events)*number_of_slots
     w = np.zeros(num_features)
+    printed = False
 
     # Rounds of simulations
     for t in range(rounds):
@@ -264,14 +263,20 @@ def simulation(rounds=int(2500)):
         # print("ucb human reward=", ucb_human_reward)
 
         # update the reward based on the human rating + random simulated noise
-        ucb_noisy_reward = ucb_human_reward + \
-            np.random.normal(loc=0.0, scale=0.1)
+        # ucb_noisy_reward = ucb_human_reward + \
+        #     np.random.normal(loc=0.0, scale=0.1)
+
+        # test noise
+        ucb_noisy_reward = ucb_human_reward + np.random.normal(loc=0.0, scale=0.01)
+        # ucb_noisy_reward = ucb_human_reward + np.random.normal(loc=0.0, scale=0.1)
+        # ucb_noisy_reward = ucb_human_reward + np.random.normal(loc=0.0, scale=0.5)
+        # ucb_noisy_reward = ucb_human_reward + np.random.normal(loc=0.0, scale=1)
         # ucb_noisy_reward = ucb_human_reward
         # print("ucb noisy reward=", ucb_noisy_reward)
 
         # getting the regression number: how far away from the best possible reward?
-        # regret_number = best_possible_reward-ucb_noisy_reward
-        regret_number = best_possible_reward-ucb_human_reward
+        regret_number = best_possible_reward-ucb_noisy_reward
+        # regret_number = best_possible_reward-ucb_human_reward
         # print("ucb regression_number=", regret_number)
 
         # update the algorithm based on the reward
@@ -283,6 +288,9 @@ def simulation(rounds=int(2500)):
         # print("\nucb total_reward=", ucb_total_reward)
         ucb_total_regret += regret_number
         # print("ucb total_regret=", ucb_total_regret)
+
+        if ucb_total_regret/float(t+1) <= 0.05 and ucb_total_regret/float(t+1) > 0:
+            print("round = ", t, " UCB: ", ucb_total_regret/float(t+1))
 
         # store the reward for plotting
         ucb_reward_dataset.append(ucb_total_reward)
@@ -400,15 +408,15 @@ def main():
         reward_over_t_std_err_pp, regret_over_t_std_err_pp = calculation_and_plotting(rep, rounds, pp_reward_dataset,
                                                                                       pp_regret_dataset, pp_reward_over_t_dataset,
                                                                                       pp_regret_over_t_dataset, 'pp')
-    plot_2_data_sets(regret_avg_ucb, regret_avg_pp, 'UCB', 'PP',
-                     'Regret Comparison', 'regret_comparison.png')
-    plot_2_data_sets(regret_over_t_avg_ucb, regret_over_t_avg_pp, 'UCB',
-                     'PP', 'Regret Decay Comparison', 'regret_over_t_comparison.png')
+    # plot_2_data_sets(regret_avg_ucb, regret_avg_pp, 'UCB', 'PP',
+    #                  'Regret Comparison', 'regret_comparison.png')
+    # plot_2_data_sets(regret_over_t_avg_ucb, regret_over_t_avg_pp, 'UCB',
+    #                  'PP', 'Regret Decay Comparison', 'regret_over_t_comparison.png')
 
-    plot_2_data_sets_with_error_bar(rounds, 'UCB', regret_avg_ucb, regret_std_err_ucb, 'PP', regret_avg_pp, regret_std_err_pp,
-                                    'rounds', 'value', 'Regret Comparison with Error Bar', 'regret_comparison_with_error_bar.png')
-    plot_2_data_sets_with_error_bar(rounds, 'UCB', regret_over_t_avg_ucb, regret_over_t_std_err_ucb, 'PP', regret_over_t_avg_pp,
-                                    regret_over_t_std_err_pp, 'rounds', 'value', 'Regret Decay Comparison with Error Bar', 'regret_over_t_comparison_with_error_bar.png')
+    # plot_2_data_sets_with_error_bar(rounds, 'UCB', regret_avg_ucb, regret_std_err_ucb, 'PP', regret_avg_pp, regret_std_err_pp,
+    #                                 'rounds', 'value', 'Regret Comparison with Error Bar', 'regret_comparison_with_error_bar.png')
+    # plot_2_data_sets_with_error_bar(rounds, 'UCB', regret_over_t_avg_ucb, regret_over_t_std_err_ucb, 'PP', regret_over_t_avg_pp,
+    #                                 regret_over_t_std_err_pp, 'rounds', 'value', 'Regret Decay Comparison with Error Bar', 'regret_over_t_comparison_with_error_bar.png')
 
 
 if __name__ == "__main__":
