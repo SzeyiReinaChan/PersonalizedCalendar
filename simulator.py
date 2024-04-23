@@ -152,11 +152,11 @@ def plot_data(dataset, dataset_name, xlabel, ylabel, title, plot_filename):
     plt.savefig(plot_filename)
     plt.close()
 
-def plot_2_data_sets(dataset_1, dataset_2, dataset_1_legend, dataset_2_legend, title, plot_filename):
+def plot_2_data_sets(dataset_1, dataset_2, dataset_1_legend, dataset_2_legend, title, plot_filename, xlabel='rounds', ylabel='value'):
     plt.plot(dataset_1)
     plt.plot(dataset_2) 
-    plt.xlabel('rounds')
-    plt.ylabel('value')
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
     plt.title(title)
     plt.legend([dataset_1_legend, dataset_2_legend], loc='upper left')
     plt.savefig(plot_filename)
@@ -219,6 +219,12 @@ def simulation(rounds=int(10000)):
     pp_total_reward = 0.0
     pp_total_feedback_reward = 0.0
     pp_total_regret = 0.0
+
+    convergence_ucb = None
+    convergence_pp = None
+    convergence_pp_lower_threshold = None
+    convergence_threshold = 0.25
+    convergence_threshold_pp = 0.01
 
     #initialize weights for perceptron
     num_features = len(relevant_events) * total_slots 
@@ -330,7 +336,14 @@ def simulation(rounds=int(10000)):
         pp_reward_over_t.append(pp_total_reward / (t + 1))
         pp_regret_over_t.append(pp_total_regret / (t + 1))
 
-    return rounds, ucb_reward_dataset, ucb_regret_dataset, ucb_reward_over_t, ucb_regret_over_t, pp_reward_dataset, pp_regret_dataset, pp_reward_over_t, pp_regret_over_t
+        if convergence_ucb is None and ucb_regret_over_t[-1] < convergence_threshold:
+            convergence_ucb = t
+        if convergence_pp is None and pp_regret_over_t[-1] < convergence_threshold:
+            convergence_pp = t
+        if convergence_pp_lower_threshold is None and pp_regret_over_t[-1] < convergence_threshold_pp:
+            convergence_pp_lower_threshold = t
+
+    return rounds, ucb_reward_dataset, ucb_regret_dataset, ucb_reward_over_t, ucb_regret_over_t, pp_reward_dataset, pp_regret_dataset, pp_reward_over_t, pp_regret_over_t, convergence_ucb, convergence_pp, convergence_pp_lower_threshold
 
 
 def main():
@@ -346,9 +359,21 @@ def main():
     pp_regret_over_t_dataset = None
 
     rep = 10
+    convergence_ucb_dataset = []
+    convergence_pp_dataset = []
+    convergence_pp_lower_threshold_dataset = []
     for _ in range(rep):
         rounds, ucb_reward_data, ucb_regret_data, ucb_reward_over_t_data, ucb_regret_over_t_data,\
-        pp_reward_data, pp_regret_data, pp_reward_over_t_data, pp_regret_over_t_data = simulation()
+        pp_reward_data, pp_regret_data, pp_reward_over_t_data, pp_regret_over_t_data, convergence_ucb, \
+        convergence_pp, convergence_pp_lower_threshold = simulation()
+
+        if convergence_pp is not None:
+            convergence_pp_dataset.append(convergence_pp)
+        if convergence_ucb is not None:
+            convergence_ucb_dataset.append(convergence_ucb)
+        if convergence_pp_lower_threshold is not None:
+            convergence_pp_lower_threshold_dataset.append(convergence_pp_lower_threshold)
+        
         if ucb_reward_dataset is None:
             ucb_reward_dataset = np.array([ucb_reward_data])
             ucb_regret_dataset = np.array([ucb_regret_data])
@@ -387,6 +412,12 @@ def main():
     plot_2_data_sets_with_error_bar(rounds, 'UCB', regret_avg_ucb, regret_std_err_ucb, 'PP', regret_avg_pp, regret_std_err_pp, 'rounds', 'value', 'Regret Comparison with Error Bar', 'regret_comparison_with_error_bar.png')
     plot_2_data_sets_with_error_bar(rounds, 'UCB', regret_over_t_avg_ucb, regret_over_t_std_err_ucb, 'PP', regret_over_t_avg_pp, regret_over_t_std_err_pp, 'rounds', 'value', 'Regret Decay Comparison with Error Bar', 'regret_over_t_comparison_with_error_bar.png')
 
+    plot_2_data_sets(convergence_ucb_dataset, convergence_pp_dataset, 'UCB', 'PP', 'Convergence Comparison', 'convergence_comparison.png', 'rep', 'rounds')
+    
+    plot_data(convergence_pp_lower_threshold_dataset, "PP Convergence Lower Threshold", "rep", "rounds", "PP Convergence", "convergence_pp_lower_threshold.png")
+    print("UCB Average Convergence: ", np.mean(convergence_ucb_dataset))
+    print("PP Average Convergence: ", np.mean(convergence_pp_dataset))
+    print("PP Average Convergence Lower Threshold: ", np.mean(convergence_pp_lower_threshold_dataset))
 
 if __name__ == "__main__":
     main()
